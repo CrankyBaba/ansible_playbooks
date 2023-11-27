@@ -1,0 +1,30 @@
+---
+- hosts: webserver
+  become: yes
+  tasks:
+  # - name: Adding a line to the file
+  #   lineinfile:
+  #     path: /home/osboxes/Desktop/nginx.conf
+  #     line: "i am the new line"
+  #     state: present
+  #     backup: yes
+
+  # - name: commenting a line
+  #   lineinfile:
+  #     path: /home/osboxes/Desktop/nginx.conf
+  #     regexp: '(^i .*)'
+  #     line: '#'
+  #     backrefs: yes
+  #     state: present
+  #     backup: no
+
+  - name: replacing a string
+    lineinfile:
+      path: /home/osboxes/Desktop/nginx.conf
+      regexp: ' +listen\s80;'
+      line: 'listen 90;'
+      backrefs: yes
+      state: present
+      backup: yes
+...
+

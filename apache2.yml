@@ -1,0 +1,29 @@
+---
+- hosts: webserver
+  become: yes
+  tasks:
+  - name: Install Apache2 Package
+    package: name=httpd update_cache=yes state=present
+    tags: ['setup']
+
+  - name: Copy Index Page
+    copy: src=/home/osboxes/Desktop/playbook dest=/var/www/html owner=root group=root mode='0644'
+    tags: ['update','sync']
+
+  - name: Start The Services
+    service: name=httpd state=started enable=true
+    tags: ['service']
+
+  - name: Changing Apache Port Number
+    lineinfile:
+      path: /etc/httpd/conf/httpd.conf
+      regexp: '^Listen'
+      line: Listen 8004
+    notify: Restart Apache2
+    tags: ['config','sync']
+
+  handlers:
+  - name: Restart Apache2
+    service: name=apache2 state=restarted
+
+...

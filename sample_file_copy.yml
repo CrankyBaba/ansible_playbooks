@@ -1,0 +1,10 @@
+---
+- hosts: webserver
+  become: yes
+  tasks:
+    - name: Copying sample file to all host
+      copy: src=/home/osboxes/Desktop/playbook/nginx.conf dest=/home/osboxes/Desktop/ owner=root group=root mode='0644'
+      tags: ['copy']
+
+...
+

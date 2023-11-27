@@ -1,0 +1,42 @@
+---
+- hosts: webserver
+  become: yes
+  vars:
+    src_path: /home/osboxes/Desktop/playbook/index.html
+    dest_path: /usr/share/nginx/html
+
+  tasks:
+  - name: Install Nginx Package
+    package: name=nginx update_cache=yes state=present
+    tags: ['setup']
+
+  - name: Copy Index Page
+    copy: src={{src_path}} dest={{dest_path}} owner=root group=root mode='0644'
+    tags: ['update','sync']
+
+  - name: Start The Services
+    systemd:
+      name: nginx
+      enabled: true
+      state: restarted
+
+  - name: Taking Backup of Existing Nginx Congfig
+    command: mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf_{{ ansible_date_time.date }}_{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}{{ ansible_date_time.second }}
+    tags: ['configbkp']
+
+  - name: Copying New Config Files
+    copy: src=/home/osboxes/Desktop/playbook/nginx.conf dest=/etc/nginx/ owner=root group=root mode='0644'
+    notify: Reload Nginx
+    tags: ['newconf']  
+
+  - name: Disabling Filrewall on all machine
+    service:
+      name: firewalld
+      state: stopped  
+
+  handlers:
+  - name: Reload Nginx
+    systemd:
+      name: nginx
+      state: reloaded
+...

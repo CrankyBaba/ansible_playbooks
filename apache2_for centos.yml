@@ -1,0 +1,32 @@
+---
+- hosts: webserver
+  become: yes
+  tasks:
+  - name: latest Apache version installed
+    yum:
+      name: httpd
+      state: latest
+
+  - name: Copy Index Page
+    copy: src=/home/osboxes/Desktop/playbook dest=/var/www/html owner=root group=root mode='0644'
+    tags: ['update','sync']
+
+  - name: Start The Services
+    service:
+      name: httpd
+      enabled: true
+      state: started
+
+  - name: Changing Apache Port Number
+    lineinfile:
+      path: /etc/httpd/conf/httpd.conf
+      regexp: '^Listen'
+      line: Listen 8104
+    notify: Restart Apache2
+    tags: ['config','sync']
+
+  handlers:
+  - name: Restart Apache2
+    service: name=httpd state=restarted
+
+...
