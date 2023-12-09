@@ -1,0 +1,7 @@
+---
+- hosts: testserver
+  become: yes
+  roles:
+  - maven
+
+...
