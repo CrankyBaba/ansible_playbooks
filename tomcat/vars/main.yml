@@ -1,0 +1,10 @@
+---
+# vars file for tomcat
+    java_home: /usr/lib/jvm/java-11-openjdk-11.0.18.0.10-3.el9.x86_64
+    catalina_pid: /opt/tomcat/temp/tomcat.pid
+    catalina_home: /opt/tomcat/apache-tomcat-8.5.96
+    catalina_base: /opt/tomcat/apache-tomcat-8.5.96
+    catalina_opts: -Xms512M -Xmx1024M -server -XX:+UseParallelGC
+    java_opts: -Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom
+    tomcat_user: tomcat
+    tomcat_group: tomcat

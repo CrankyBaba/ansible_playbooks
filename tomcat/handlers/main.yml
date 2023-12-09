@@ -1,0 +1,11 @@
+---
+# handlers file for tomcat
+  - name: 'Reload systemd'
+    systemd:
+      name: tomcat
+      state: restarted
+
+  - name: 'Restart tomcat'
+    systemd:
+      name: tomcat
+      state: restarted
