@@ -1,0 +1,153 @@
+---
+- hosts: server
+  become: yes
+
+
+  tasks:
+  - name: 'Update all packages'
+    ansible.builtin.apt:
+      name: "*"
+      state: latest
+    tags: ['update_system']
+
+  - name: 'Loading the overlay modules'
+    modprobe:
+      name: overlay
+    ignore_errors: yes
+  
+  - name: 'Load the br_netfilter modules'
+    modprobe:
+      name: br_netfilter
+    ignore_errors: yes
+  
+  - name: 'Ensure modules are loaded on boot'
+    copy:
+      content: |
+        overlay
+        br_netfilter
+      dest: /etc/modules-load.d/containerd.conf
+
+  - name: Create /etc/sysctl.d/kubernetes.conf file
+    copy:
+      content: |
+        # Your sysctl settings for Kubernetes
+        net.bridge.bridge-nf-call-ip6tables = 1
+        net.bridge.bridge-nf-call-iptables = 1
+        net.ipv4.ip_forward = 1
+      dest: /etc/sysctl.d/kubernetes.conf
+
+  # - name: 'Set net.bridge.bridge-nf-call-ip6tables to 1'
+  #   lineinfile:
+  #     path: /etc/sysctl.d/kubernetes.conf
+  #     line: 'net.bridge.bridge-nf-call-ip6tables = 1'
+  #     state: present
+
+  # - name: 'Set net.bridge.bridge-nf-call-iptables to 1'
+  #   lineinfile:
+  #     path: /etc/sysctl.d/kubernetes.conf
+  #     line: 'net.bridge.bridge-nf-call-iptables = 1'
+  #     state: present
+
+  # - name: 'Set net.ipv4.ip_forward to 1'
+  #   lineinfile:
+  #     path: /etc/sysctl.d/kubernetes.conf
+  #     line: 'net.ipv4.ip_forward = 1'
+  #     state: present
+
+  - name: 'Load sysctl settings'
+    command: sysctl --system
+
+  - name: Install curl
+    ansible.builtin.apt:
+      name: curl
+      state: present
+
+  - name: Add Docker GPG key
+    ansible.builtin.shell:
+      cmd: "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -"
+    args:
+      executable: /bin/bash
+
+  - name: Add Docker repository
+    ansible.builtin.apt_repository:
+      repo: 'deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable'
+      state: present
+      update_cache: yes
+
+  - name: Update package lists
+    ansible.builtin.apt:
+      update_cache: yes
+
+  - name: Install containerd.io
+    ansible.builtin.apt:
+      name: containerd.io
+      state: present
+  
+  - name: 'Create /etc/containerd directory'
+    file:
+      path: /etc/containerd
+      state: directory
+
+  - name: 'Generate default containerd configuration'
+    command: containerd config default
+    args:
+      creates: /etc/containerd/config.toml
+
+  - name: Change SystemdCgroup to true in the text file
+    ansible.builtin.replace:
+      path: /home/ubuntu/file.txt
+      regexp: '^(\s*SystemdCgroup\s*=\s*).*'
+      replace: '\1true'     
+
+  - name: 'Restart containerd service'
+    systemd:
+      name: containerd
+      state: restarted
+
+  - name: Add Kubernetes GPG key
+    ansible.builtin.shell:
+      cmd: "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -"
+    args:
+      executable: /bin/bash
+
+  - name: Add Kubernetes repository
+    ansible.builtin.copy:
+      content: |
+        deb https://apt.kubernetes.io/ kubernetes-xenial main
+      dest: /etc/apt/sources.list.d/kubernetes.list      
+
+  - name: Update package lists for Kubernetes
+    ansible.builtin.apt:
+      update_cache: yes
+
+  - name: Install kubelet, kubeadm, and kubectl
+    ansible.builtin.apt:
+      name:
+        - kubelet
+        - kubeadm
+        - kubectl
+      state: present
+
+  - name: 'Disable swap'
+    command: swapoff -a
+
+  - name: 'Comment out swap entry in /etc/fstab'
+    replace:
+      path: /etc/fstab
+      regexp: '^(\S+\s+swap\s+\S+\s+\S+\s+\S+\s+\S+)$'
+      replace: '#\1'
+
+  - name: 'Enable and start kubelet service'
+    systemd:
+      name: kubelet
+      enabled: yes
+      state: started
+
+  - name: 'Reload systemd'
+    command: systemctl daemon-reload
+
+  - name: 'Restart kubelet service'
+    systemd:
+      name: kubelet
+      state: restarted  
+
